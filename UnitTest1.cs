@@ -10,25 +10,82 @@ public class UiTests
     public void Test_Data_Loads_In_Table()
     {
         IWebDriver driver = new ChromeDriver();
+        WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(12));
 
-        driver.Navigate().GoToUrl("http://localhost:5500");
+        try
+        {
+            driver.Navigate().GoToUrl("http://localhost:5500");
 
-        // Wait until table rows appear (max 10 sec)
-        WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            // Click Search button
+            wait.Until(d => d.FindElement(By.XPath("//button[text()='Search']"))).Click();
 
-        // 1. Find button
-        var button = wait.Until(d => d.FindElement(By.TagName("button")));
+            // Wait for table rows
+            wait.Until(d => d.FindElements(By.CssSelector("table tbody tr")).Count > 0);
 
-        // 2. Click button
-        button.Click();
+            Assert.True(driver.FindElements(By.CssSelector("table tbody tr")).Count > 0);
+        }
+        finally
+        {
+            driver.Quit();
+        }
+    }
 
+    [Fact]
+    public void Test_Login_Saves_Token()
+    {
+        IWebDriver driver = new ChromeDriver();
+        WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(15));
 
-        wait.Until(d => d.FindElements(By.TagName("tr")).Count > 0);
+        try
+        {
+            driver.Navigate().GoToUrl("http://localhost:5500");
 
-        var rows = driver.FindElements(By.TagName("tr"));
+            ((IJavaScriptExecutor)driver).ExecuteScript("localStorage.clear();");
+            driver.Navigate().Refresh();
 
-        Assert.True(rows.Count > 0);
+            wait.Until(d => d.FindElement(By.CssSelector("input[placeholder='Username']"))).SendKeys("admin");
+            driver.FindElement(By.CssSelector("input[type='password']")).SendKeys("1234");
+            driver.FindElement(By.XPath("//button[text()='Login']")).Click();
 
-        driver.Quit();
+            // Wait for success message
+            wait.Until(d => d.FindElement(By.CssSelector("div.alert-success")));
+
+            var token = ((IJavaScriptExecutor)driver).ExecuteScript("return localStorage.getItem('token');");
+            Assert.NotNull(token);
+            Assert.NotEmpty(token.ToString());
+        }
+        finally
+        {
+            driver.Quit();
+        }
+    }
+
+    [Fact]
+    public void Test_Records_Load_After_Login()
+    {
+        IWebDriver driver = new ChromeDriver();
+        WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(15));
+
+        try
+        {
+            driver.Navigate().GoToUrl("http://localhost:5500");
+
+            ((IJavaScriptExecutor)driver).ExecuteScript("localStorage.clear();");
+            driver.Navigate().Refresh();
+
+            // Login
+            wait.Until(d => d.FindElement(By.CssSelector("input[placeholder='Username']"))).SendKeys("admin");
+            driver.FindElement(By.CssSelector("input[type='password']")).SendKeys("1234");
+            driver.FindElement(By.XPath("//button[text()='Login']")).Click();
+
+            // Login() auto-calls getRecords(), just wait for rows
+            wait.Until(d => d.FindElements(By.CssSelector("table tbody tr")).Count > 0);
+
+            Assert.True(driver.FindElements(By.CssSelector("table tbody tr")).Count > 0);
+        }
+        finally
+        {
+            driver.Quit();
+        }
     }
 }
