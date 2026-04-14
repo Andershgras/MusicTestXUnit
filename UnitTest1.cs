@@ -16,6 +16,13 @@ public class UiTests
         // Wait until table rows appear (max 10 sec)
         WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
 
+        // 1. Find button
+        var button = wait.Until(d => d.FindElement(By.TagName("button")));
+
+        // 2. Click button
+        button.Click();
+
+
         wait.Until(d => d.FindElements(By.TagName("tr")).Count > 0);
 
         var rows = driver.FindElements(By.TagName("tr"));
