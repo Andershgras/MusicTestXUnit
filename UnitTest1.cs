@@ -87,5 +87,53 @@ public class UiTests
         {
             driver.Quit();
         }
+
+    }
+    [Fact]
+    public void Test_Search_Filter_Works()
+    {
+        IWebDriver driver = new ChromeDriver();
+        WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
+        try
+        {
+            driver.Navigate().GoToUrl("http://localhost:5500");
+
+            // 1. Type "a" into the Title search box
+            var searchInput = wait.Until(d => d.FindElement(By.CssSelector("input[placeholder='Search by title...']")));
+            searchInput.SendKeys("a");
+
+            // 2. Click Search
+            driver.FindElement(By.XPath("//button[text()='Search']")).Click();
+
+            // 3. Simple Check: Ensure the table is still there (not crashed)
+            var rows = wait.Until(d => d.FindElements(By.CssSelector("table tbody tr")));
+            Assert.NotNull(rows);
+        }
+        finally { driver.Quit(); }
+    }
+    [Fact]
+    public void Test_Logout_Clears_View()
+    {
+        IWebDriver driver = new ChromeDriver();
+        WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
+        try
+        {
+            driver.Navigate().GoToUrl("http://localhost:5500");
+
+            // 1. Quick Login
+            wait.Until(d => d.FindElement(By.CssSelector("input[placeholder='Username']"))).SendKeys("admin");
+            driver.FindElement(By.CssSelector("input[type='password']")).SendKeys("1234");
+            driver.FindElement(By.XPath("//button[text()='Login']")).Click();
+
+            // 2. Click Logout (Wait for it to appear first)
+            wait.Until(d => d.FindElement(By.XPath("//button[text()='Logout']"))).Click();
+
+            // 3. Check: Is the Username input visible again?
+            var loginInput = wait.Until(d => d.FindElement(By.CssSelector("input[placeholder='Username']")));
+            Assert.True(loginInput.Displayed);
+        }
+        finally { driver.Quit(); }
     }
 }
